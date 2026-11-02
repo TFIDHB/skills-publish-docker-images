@@ -2,25 +2,33 @@ name: Docker Publish
 
 on:
   push:
-    branches:
-      - main
-
-permissions:
-  contents: read
-  packages: write
+    branches: [main]
 
 jobs:
-  build-and-push:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - name: Log in to the Container registry
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Build and push Docker image
-        run: |
-          docker build . --tag ghcr.io/tfidhb/skills-publish-docker-images/stackoverflown:main
-          docker push ghcr.io/tfidhb/skills-publish-docker-images/stackoverflown:main
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ghcr.io/tfidhb/skills-publish-docker-images/stackoverflow:main
+            ghcr.io/tfidhb/skills-publish-docker-images/stackoverflow:${{ github.sha }}
